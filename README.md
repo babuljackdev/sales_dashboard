@@ -2,6 +2,20 @@
 
 A real-time sales dashboard application built with Django, Channels, and PostgreSQL. The application includes WebSocket support for real-time updates and comes with a demo dataset.
 
+## Screenshots
+
+### Sales Management Interface
+![Sales Management](sales_management.png)
+
+### Real-time Dashboard
+![Dashboard](dashboard.png)
+
+## Live Demo (Without Real-time Features)
+
+You can check out the live demo at: [https://assigntaskpro.pythonanywhere.com/](https://assigntaskpro.pythonanywhere.com/)
+
+**Note:** The live demo on PythonAnywhere doesn't support real-time features. To experience the full real-time functionality, please install the Docker container locally using the instructions below.
+
 ## Prerequisites
 
 Before you begin, ensure you have the following installed on your system:
@@ -170,6 +184,3 @@ For production deployment:
 4. Push to the branch
 5. Create a Pull Request
 
-## License
-
-[Your License Here] 
