@@ -39,11 +39,17 @@ class Command(BaseCommand):
         first_names = ["John", "Emma", "Michael", "Sarah", "David", "Lisa", "James", "Emily", "Robert", "Jessica"]
         last_names = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Rodriguez", "Martinez"]
 
+        # Create unique combinations
+        combinations = []
         for i in range(10):
-            name = f"{random.choice(first_names)} {random.choice(last_names)}"
-            email = f"{name.lower().replace(' ', '.')}@example.com"
+            first_name = first_names[i]  # Use index instead of random choice
+            last_name = last_names[i]    # Use index instead of random choice
+            name = f"{first_name} {last_name}"
+            email = f"{first_name.lower()}.{last_name.lower()}@example.com"
             phone = f"+1-555-{random.randint(100, 999)}-{random.randint(1000, 9999)}"
+            combinations.append((name, email, phone))
             
+        for name, email, phone in combinations:
             Salesperson.objects.create(
                 name=name,
                 email=email,

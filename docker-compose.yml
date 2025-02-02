@@ -1,0 +1,35 @@
+version: '3.3'
+
+services:
+  web:
+    build: .
+    command: daphne -b 0.0.0.0 -p 8000 sales_dashboard.asgi:application
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgres://sales_user:sales_password@db:5432/sales_db
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - db
+      - redis
+
+  db:
+    image: postgres:13
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=sales_db
+      - POSTGRES_USER=sales_user
+      - POSTGRES_PASSWORD=sales_password
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:6
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres_data: 

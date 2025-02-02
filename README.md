@@ -1,245 +1,175 @@
 # Sales Dashboard
 
-A real-time sales dashboard application built with Django, Channels, Redis, and PostgreSQL.
+A real-time sales dashboard application built with Django, Channels, and PostgreSQL. The application includes WebSocket support for real-time updates and comes with a demo dataset.
 
 ## Prerequisites
 
-Before running the project, ensure you have the following installed:
+Before you begin, ensure you have the following installed on your system:
+- Docker ([Install Docker](https://docs.docker.com/get-docker/))
+- Docker Compose ([Install Docker Compose](https://docs.docker.com/compose/install/))
 
-1. Python 3.8 or higher
-2. PostgreSQL 12 or higher
-3. Redis Server
-4. pip (Python package manager)
-
-## Installation Guide
-
-### 1. PostgreSQL Setup
-
-#### Windows
-1. Download PostgreSQL installer from [postgresql.org](https://www.postgresql.org/download/windows/)
-2. Run the installer
-3. Set password for postgres user
-4. Keep default port (5432)
-5. Complete installation
-
-#### Mac OS
-```bash
-brew install postgresql
-brew services start postgresql
-```
-
-#### Linux (Ubuntu/Debian)
-```bash
-sudo apt update
-sudo apt install postgresql postgresql-contrib
-sudo systemctl start postgresql
-sudo systemctl enable postgresql
-```
-
-### 2. Redis Setup
-
-#### Windows
-1. Download Redis for Windows through [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/install)
-2. Install Redis in WSL:
-```bash
-sudo apt-get update
-sudo apt-get install redis-server
-sudo service redis-server start
-```
-
-#### Mac OS
-```bash
-brew install redis
-brew services start redis
-```
-
-#### Linux (Ubuntu/Debian)
-```bash
-sudo apt update
-sudo apt install redis-server
-sudo systemctl start redis-server
-sudo systemctl enable redis-server
-```
-
-### 3. Database Setup
-1. Open terminal/command prompt
-2. Access PostgreSQL:
-```bash
-# Windows
-psql -U postgres
-
-# Mac/Linux
-sudo -u postgres psql
-```
-
-3. Create database:
-```sql
-CREATE DATABASE sales_dashboard;
-```
-
-### 4. Project Setup
+## Quick Start
 
 1. Clone the repository:
 ```bash
-git clone [your-repository-url]
-cd sales_dashboard
+git clone <repository-url>
+cd <project-directory>
 ```
 
-2. Create and activate virtual environment:
+2. Start the application using Docker Compose:
 ```bash
-# Windows
-python -m venv venv
-venv\Scripts\activate
-
-# Mac/Linux
-python3 -m venv venv
-source venv/bin/activate
+docker-compose up -d
 ```
 
-3. Install dependencies:
+The application will be available at: http://localhost:8000
+
+## What's Included
+
+The Docker setup includes:
+- Django web application with Daphne ASGI server
+- PostgreSQL database
+- Redis for WebSocket support
+- Sample data generation
+
+### Sample Data
+
+The application comes with pre-configured sample data:
+- 30 products with random prices and stock levels
+- 10 salespeople with unique contact information
+- Historical sales data for the past 7 months
+
+## Docker Commands
+
+Here are some useful Docker commands for managing the application:
+
+1. Start the application:
 ```bash
-pip install -r requirements.txt
+docker-compose up -d
 ```
 
-4. Create a `.env` file in the project root:
-```env
-DEBUG=True
-SECRET_KEY=your-secret-key
-DB_NAME=sales_dashboard
-DB_USER=postgres
-DB_PASSWORD=your-postgres-password
-DB_HOST=localhost
-DB_PORT=5432
-REDIS_URL=redis://localhost:6379
-```
-
-5. Update database settings in `sales_dashboard/settings.py`:
-```python
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME', 'sales_dashboard'),
-        'USER': os.environ.get('DB_USER', 'postgres'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', ''),
-        'HOST': os.environ.get('DB_HOST', 'localhost'),
-        'PORT': os.environ.get('DB_PORT', '5432'),
-    }
-}
-```
-
-6. Create static and media directories:
+2. Stop the application:
 ```bash
-mkdir static media
+docker-compose down
 ```
 
-7. Apply migrations:
+3. View logs:
 ```bash
-python manage.py makemigrations
-python manage.py migrate
+docker-compose logs -f
 ```
 
-8. Create superuser:
+4. Rebuild containers (after making changes):
 ```bash
-python manage.py createsuperuser
+docker-compose up --build -d
 ```
 
-9. Collect static files:
+5. View running containers:
 ```bash
-python manage.py collectstatic
+docker-compose ps
 ```
 
-## Running the Project
+## Configuration
 
-1. Ensure Redis server is running:
-```bash
-# Check Redis status
-redis-cli ping
-# Should return PONG
-```
+The application uses the following default configuration:
 
-2. Start the development server:
-```bash
-python manage.py runserver
-```
+### Web Application
+- Port: 8000
+- URL: http://localhost:8000
 
-3. Access the application:
-- Main application: http://localhost:8000
-- Admin panel: http://localhost:8000/admin
+### PostgreSQL Database
+- Host: db
+- Port: 5432
+- Database: sales_db
+- Username: sales_user
+- Password: sales_password
 
-## Project Structure
-```
-sales_dashboard/
-├── dashboard/         # Dashboard app
-├── sales/            # Sales app
-├── static/           # Static files
-├── media/           # Media files
-├── templates/       # HTML templates
-└── sales_dashboard/ # Project settings
-```
+### Redis
+- Host: redis
+- Port: 6379
 
-## Features
-- Real-time sales updates using WebSockets
-- Interactive dashboard
-- Sales data visualization
-- User authentication
-- Admin interface for data management
+## Troubleshooting
 
-## Common Issues and Solutions
+1. If the containers don't start:
+   ```bash
+   # Check if ports are in use
+   sudo lsof -i :8000
+   sudo lsof -i :5432
+   sudo lsof -i :6379
+   
+   # Stop local services if needed
+   sudo service postgresql stop
+   sudo service redis-server stop
+   ```
 
-### 1. Database Connection Issues
-- Verify PostgreSQL is running:
-```bash
-# Windows
-net start postgresql
+2. If you can't connect to the database:
+   ```bash
+   # Check database logs
+   docker-compose logs db
+   
+   # Check if database is ready
+   docker-compose exec db pg_isready
+   ```
 
-# Mac/Linux
-sudo systemctl status postgresql
-```
-- Check database credentials in .env file
-- Ensure database exists
-
-### 2. Redis Connection Issues
-- Verify Redis is running:
-```bash
-redis-cli ping
-```
-- Check Redis connection string in settings.py
-- Ensure Redis port (6379) is not blocked
-
-### 3. Static Files Not Loading
-```bash
-python manage.py collectstatic --noinput
-```
-
-### 4. Migration Issues
-```bash
-python manage.py migrate --run-syncdb
-```
+3. If the application shows no data:
+   ```bash
+   # Check web application logs
+   docker-compose logs web
+   
+   # Manually trigger data generation
+   docker-compose exec web python manage.py generate_testdata
+   ```
 
 ## Development
 
-### Requirements Update
-To update requirements.txt:
+To make changes to the application:
+
+1. Modify the code as needed
+2. Rebuild the containers:
 ```bash
-pip freeze > requirements.txt
+docker-compose up --build -d
 ```
 
-### Running Tests
-```bash
-python manage.py test
+## Project Structure
+
+```
+.
+├── Dockerfile              # Docker configuration for web application
+├── docker-compose.yml      # Docker Compose configuration
+├── requirements.txt        # Python dependencies
+├── entrypoint.sh          # Docker entrypoint script
+├── manage.py              # Django management script
+├── sales/                 # Sales application
+├── dashboard/             # Dashboard application
+└── sales_dashboard/       # Project settings
 ```
 
-## Production Deployment Notes
+## Features
 
-1. Update `.env`:
-```env
-DEBUG=False
-ALLOWED_HOSTS=your-domain.com
-```
+- Real-time sales dashboard with WebSocket updates
+- Product management
+- Sales tracking
+- Salesperson management
+- Historical sales data visualization
+- Responsive design
+- Demo data generation
 
-2. Configure proper security settings
-3. Use production-grade servers (Gunicorn, Daphne)
-4. Set up SSL/TLS certificates
-5. Configure proper Redis security
+## Security Notes
 
+For production deployment:
 
+1. Change default database credentials in `docker-compose.yml`
+2. Set secure `SECRET_KEY` in Django settings
+3. Set `DEBUG=False` in production
+4. Configure proper SSL/TLS
+5. Update `ALLOWED_HOSTS` in Django settings
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+## License
+
+[Your License Here] 
