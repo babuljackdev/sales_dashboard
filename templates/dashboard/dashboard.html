@@ -1,0 +1,885 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="space-y-4 lg:space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-xl lg:text-2xl font-semibold text-gray-900">Sales Dashboard</h1>
+            <p class="mt-1 text-sm text-gray-600">Track your sales performance and inventory metrics</p>
+        </div>
+        <div class="flex items-center space-x-3">
+            <span class="text-sm text-gray-500">Last updated: {{ now|date:"M d, Y H:i" }}</span>
+            <button class="p-2 text-gray-400 hover:text-primary-500 transition-colors duration-200"
+                    onclick="updateChartData()">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Total Revenue Card -->
+        <div class="bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl shadow-lg overflow-hidden transform transition-all duration-300 hover:scale-105">
+            <div class="px-4 sm:px-6 py-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 bg-white/20 rounded-lg p-3">
+                        <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div class="ml-5 flex-1 min-w-0">
+                        <dt class="text-sm font-medium text-white/80 truncate">
+                            Revenue
+                        </dt>
+                        <dd class="mt-1 text-lg sm:text-2xl font-semibold text-white truncate" id="total-revenue">
+                            ${{ total_revenue|floatformat:2 }}
+                            {% if revenue_change %}
+                            <div id="revenue-change" class="text-sm font-medium {% if revenue_change > 0 %}text-green-300{% else %}text-red-300{% endif %} text-right">
+                                {% if revenue_change > 0 %}↑{% else %}↓{% endif %}
+                                {{ revenue_change }}%
+                            </div>
+                            <div class="text-xs text-white/60 text-right">vs last month</div>
+                            {% endif %}
+                        </dd>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Sales Card -->
+        <div class="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl shadow-lg overflow-hidden transform transition-all duration-300 hover:scale-105">
+            <div class="px-4 sm:px-6 py-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 bg-white/20 rounded-lg p-3">
+                        <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                        </svg>
+                    </div>
+                    <div class="ml-5 flex-1 min-w-0">
+                        <dt class="text-sm font-medium text-white/80 truncate">
+                            Sales
+                        </dt>
+                        <dd class="mt-1 text-lg sm:text-2xl font-semibold text-white truncate" id="total-sales">
+                            {{ total_sales }}
+                            {% if sales_change %}
+                            <div id="sales-change" class="text-sm font-medium {% if sales_change > 0 %}text-green-300{% else %}text-red-300{% endif %} text-right">
+                                {% if sales_change > 0 %}↑{% else %}↓{% endif %}
+                                {{ sales_change }}%
+                            </div>
+                            <div class="text-xs text-white/60 text-right">vs last month</div>
+                            {% endif %}
+                        </dd>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Product Card -->
+        <div class="bg-gradient-to-br from-violet-500 to-violet-600 rounded-xl shadow-lg overflow-hidden transform transition-all duration-300 hover:scale-105">
+            <div class="px-4 sm:px-6 py-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 bg-white/20 rounded-lg p-3">
+                        <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                        </svg>
+                    </div>
+                    <div class="ml-5 flex-1 min-w-0">
+                        <dl>
+                            <dt class="text-sm font-medium text-white/80 truncate">
+                                Best Product
+                            </dt>
+                            <dd class="mt-1">
+                                <div class="text-lg font-medium text-white truncate" id="top-product-name">
+                                    {{ top_product.name }}
+                                </div>
+                                <div class="text-sm text-white/80" id="top-product-quantity">
+                                    {{ top_product.total_quantity }} units sold
+                                </div>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Low Stock Alert -->
+        <div class="bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl shadow-lg overflow-hidden transform transition-all duration-300 hover:scale-105">
+            <div class="px-4 sm:px-6 py-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 bg-white/20 rounded-lg p-3">
+                        <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                    <div class="ml-5 flex-1 min-w-0">
+                        <dl>
+                            <dt class="text-sm font-medium text-white/80 truncate">
+                                Stock Alert
+                            </dt>
+                            <dd class="mt-1">
+                                <div class="text-lg sm:text-2xl font-semibold text-white" id="low-stock-count">
+                                    {{ low_stock_count }}
+                                </div>
+                                <div class="text-xs text-white/80">
+                                    items below threshold
+                                </div>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <!-- Sales Trends Chart -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="px-4 sm:px-6 py-5 border-b border-gray-200">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <h3 class="text-lg font-medium leading-6 text-gray-900">Sales Trends</h3>
+                    <div class="relative w-full sm:w-auto">
+                        <select id="trendTimeRange" class="appearance-none block w-full bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 leading-tight focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm">
+                            <option selected value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 sm:p-6 relative h-[300px] sm:h-[400px] lg:h-[500px]">
+                <!-- Loading Overlay -->
+                <div id="salesChartLoader" class="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center hidden">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+                </div>
+                <canvas id="salesTrendChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Revenue by Salesperson Chart -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="px-4 sm:px-6 py-5 border-b border-gray-200">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <h3 class="text-lg font-medium leading-6 text-gray-900">Revenue by Salesperson</h3>
+                    <div class="relative w-full sm:w-auto">
+                        <select id="chartType" class="appearance-none block w-full bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 leading-tight focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm">
+                            <option value="bar">Bar</option>
+                            <option selected value="doughnut">Doughnut</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 sm:p-6 relative h-[300px] sm:h-[400px] lg:h-[500px]">
+                <!-- Loading Overlay -->
+                <div id="revenueChartLoader" class="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center hidden">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+                </div>
+                <canvas id="revenueBySalespersonChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tables Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <!-- Top Selling Products -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="px-4 sm:px-6 py-5 border-b border-gray-200">
+                <h3 class="text-lg font-medium leading-6 text-gray-900">Top Selling Products</h3>
+            </div>
+            <div class="overflow-x-auto">
+                <div class="inline-block min-w-full align-middle">
+                    <table class="min-w-full divide-y divide-gray-200" id="top-products-table">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Product
+                                </th>
+                                <th scope="col" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Quantity Sold
+                                </th>
+                                <th scope="col" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Revenue
+                                </th>
+                                <th scope="col" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Stock Level
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for product in top_products %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    {{ product.name }}
+                                </td>
+                                <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {{ product.total_quantity|default:0 }}
+                                </td>
+                                <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    ${{ product.revenue|floatformat:2 }}
+                                </td>
+                                <td class="px-4 sm:px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                        {% if product.stock_level <= 5 %}bg-red-100 text-red-800
+                                        {% elif product.stock_level <= 10 %}bg-yellow-100 text-yellow-800
+                                        {% else %}bg-green-100 text-green-800{% endif %}">
+                                        {{ product.stock_level }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Low Stock Products -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="px-6 py-5 border-b border-gray-200">
+                <h3 class="text-lg font-medium leading-6 text-gray-900">Low Stock Products</h3>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200" id="low-stock-table">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Product
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Stock Level
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Status
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for product in low_stock_products %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {{ product.name }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ product.stock_level }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                    {% if product.stock_level <= 5 %}bg-red-100 text-red-800
+                                    {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                    {% if product.stock_level <= 5 %}Critical{% else %}Low{% endif %}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Verify Chart.js is loaded
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js is not loaded! Please check your network connection and try again.');
+    }
+
+    // Configure Chart.js defaults
+    Chart.defaults.font.family = "'Inter', sans-serif";
+    Chart.defaults.color = '#6B7280';
+    Chart.defaults.elements.line.borderWidth = 2;
+    Chart.defaults.elements.point.radius = 3;
+    Chart.defaults.elements.point.hoverRadius = 5;
+
+    // Dynamic color generator
+    function generateColors(count) {
+        const colors = [
+            '#0EA5E9', '#10B981', '#6366F1', '#F59E0B', '#EC4899',
+            '#8B5CF6', '#14B8A6', '#F43F5E', '#84CC16', '#06B6D4'
+        ];
+        
+        // If we need more colors than in our predefined array
+        while (colors.length < count) {
+            const h = Math.floor(Math.random() * 360);
+            const s = 70 + Math.random() * 10; // 70-80%
+            const l = 45 + Math.random() * 10; // 45-55%
+            colors.push(`hsl(${h}, ${s}%, ${l}%)`);
+        }
+        
+        return colors.slice(0, count);
+    }
+
+    // Charts state
+    let salesTrendChart = null;
+    let revenueChart = null;
+    let currentTimeRange = 'daily';
+    let currentChartType = 'doughnut';
+
+    // Function to show/hide loaders
+    function toggleLoader(chartId, show) {
+        const loader = document.getElementById(chartId + 'Loader');
+        if (loader) {
+            loader.classList.toggle('hidden', !show);
+        }
+    }
+
+    // Function to fetch and update chart data with better error handling
+    async function updateChartData() {
+        try {
+            console.log('Fetching chart data...');
+            toggleLoader('salesChart', true);
+            toggleLoader('revenueChart', true);
+            
+            const response = await fetch(`{% url 'dashboard-chart-data' %}?timeRange=${currentTimeRange}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('Received data:', data);
+            
+            if (!data.sales_trends || !data.revenue_by_salesperson) {
+                throw new Error('Missing data in response');
+            }
+
+            // Show canvas if it was hidden
+            document.getElementById('salesTrendChart').style.display = 'block';
+            document.getElementById('revenueBySalespersonChart').style.display = 'block';
+            
+            // Remove any existing messages
+            const messages = document.querySelectorAll('.text-center.text-gray-500.py-10, .text-center.text-red-500.py-4');
+            messages.forEach(msg => msg.remove());
+
+            // Update charts
+            updateSalesTrendChart(data.sales_trends);
+            updateRevenueBySalespersonChart(data.revenue_by_salesperson);
+            
+        } catch (error) {
+            console.error('Error fetching chart data:', error);
+            showError(error.message);
+        } finally {
+            toggleLoader('salesChart', false);
+            toggleLoader('revenueChart', false);
+        }
+    }
+
+    // Helper function to show errors
+    function showError(message) {
+        const errorMessage = document.createElement('div');
+        errorMessage.className = 'text-center text-red-500 py-4';
+        errorMessage.textContent = `Error loading chart data: ${message}. Please try again.`;
+        
+        ['salesTrendChart', 'revenueBySalespersonChart'].forEach(chartId => {
+            const chart = document.getElementById(chartId);
+            if (chart) {
+                const existingError = chart.parentNode.querySelector('.text-red-500');
+                if (existingError) {
+                    existingError.remove();
+                }
+                chart.parentNode.insertBefore(errorMessage.cloneNode(true), chart);
+            }
+        });
+    }
+
+    // Initialize and set up event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM loaded, initializing charts...');
+        
+        // Verify elements exist
+        const elements = {
+            salesCanvas: document.getElementById('salesTrendChart'),
+            revenueCanvas: document.getElementById('revenueBySalespersonChart'),
+            trendTimeRange: document.getElementById('trendTimeRange'),
+            chartType: document.getElementById('chartType'),
+            salesLoader: document.getElementById('salesChartLoader'),
+            revenueLoader: document.getElementById('revenueChartLoader')
+        };
+
+        // Check if all elements exist
+        Object.entries(elements).forEach(([name, element]) => {
+            if (!element) {
+                console.error(`${name} element not found!`);
+            }
+        });
+
+        // Only proceed if all required elements exist
+        if (elements.salesCanvas && elements.revenueCanvas && elements.trendTimeRange && elements.chartType) {
+            // Initial chart setup
+            updateChartData();
+
+            // Time range selector with loading state
+            elements.trendTimeRange.addEventListener('change', function(e) {
+                e.preventDefault();
+                currentTimeRange = e.target.value;
+                this.disabled = true;
+                updateChartData().finally(() => {
+                    this.disabled = false;
+                });
+            });
+
+            // Chart type selector with loading state
+            elements.chartType.addEventListener('change', function(e) {
+                e.preventDefault();
+                currentChartType = e.target.value;
+                this.disabled = true;
+                updateChartData().finally(() => {
+                    this.disabled = false;
+                });
+            });
+        }
+    });
+
+    // Get the start of the week for a given date
+    function getWeekStart(date) {
+        const d = new Date(date);
+        const day = d.getDay();
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is sunday
+        return new Date(d.setDate(diff));
+    }
+
+    // Format date based on time range
+    function formatDate(dateStr, timeRange) {
+        const date = new Date(dateStr);
+        if (timeRange === 'monthly') {
+            return date.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+        } else if (timeRange === 'weekly') {
+            const weekStart = getWeekStart(date);
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekStart.getDate() + 6);
+            
+            // Format as "MMM D - MMM D" or "MMM D - D" if same month
+            const startMonth = weekStart.toLocaleDateString(undefined, { month: 'short' });
+            const endMonth = weekEnd.toLocaleDateString(undefined, { month: 'short' });
+            const startDay = weekStart.getDate();
+            const endDay = weekEnd.getDate();
+            
+            const displayText = startMonth === endMonth
+                ? `${startMonth} ${startDay}-${endDay}`
+                : `${startMonth} ${startDay}-${endMonth} ${endDay}`;
+            
+            return {
+                display: displayText,
+                timestamp: weekStart.getTime()
+            };
+        }
+        return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    }
+
+    // Sales Trend Chart
+    function updateSalesTrendChart(data) {
+        if (!Array.isArray(data) || data.length === 0) {
+            console.warn('No sales trend data available');
+            return;
+        }
+
+        if (salesTrendChart) {
+            salesTrendChart.destroy();
+        }
+
+        // For weekly view, group data by week
+        if (currentTimeRange === 'weekly') {
+            const weeklyData = {};
+            data.forEach(item => {
+                const weekStart = getWeekStart(new Date(item.date));
+                const key = weekStart.getTime();
+                if (!weeklyData[key]) {
+                    weeklyData[key] = {
+                        date: weekStart,
+                        daily_revenue: 0
+                    };
+                }
+                weeklyData[key].daily_revenue += item.daily_revenue;
+            });
+            data = Object.values(weeklyData);
+        }
+
+        // Sort data by date
+        data.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        const formattedDates = data.map(item => formatDate(item.date, currentTimeRange));
+        const labels = currentTimeRange === 'weekly' 
+            ? formattedDates.map(date => date.display)
+            : formattedDates;
+        const values = data.map(item => item.daily_revenue);
+        
+        const canvas = document.getElementById('salesTrendChart');
+        const ctx = canvas.getContext('2d');
+        salesTrendChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: `${currentTimeRange.charAt(0).toUpperCase() + currentTimeRange.slice(1)} Revenue`,
+                    data: values,
+                    borderColor: '#0EA5E9',
+                    backgroundColor: '#0EA5E9',
+                    fill: {
+                        target: 'origin',
+                        above: '#0EA5E920'
+                    },
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `Revenue: $${context.parsed.y.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        min: 0,
+                        beginAtZero: true,
+                        grid: {
+                            color: '#E5E7EB',
+                            drawBorder: false
+                        },
+                        position: 'left',
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0});
+                            },
+                            padding: 10
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false,
+                            drawBorder: false
+                        },
+                        ticks: {
+                            padding: 10
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Revenue by Salesperson Chart
+    function updateRevenueBySalespersonChart(data) {
+        if (!Array.isArray(data) || data.length === 0) {
+            console.warn('No revenue by salesperson data available');
+            return;
+        }
+
+        if (revenueChart) {
+            revenueChart.destroy();
+        }
+
+        const labels = data.map(item => item.salesperson__name);
+        const values = data.map(item => item.total_revenue);
+        
+        const canvas = document.getElementById('revenueBySalespersonChart');
+        const ctx = canvas.getContext('2d');
+        const colors = generateColors(data.length);
+        
+        const chartConfig = {
+            type: currentChartType,
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: colors,
+                    borderWidth: 2,
+                    borderColor: '#FFFFFF'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: currentChartType === 'bar' ? 'y' : undefined,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            font: {
+                                size: 11
+                            },
+                            boxWidth: 30,
+                            boxHeight: 30
+                        },
+                        display: true,
+                        maxHeight: 200
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.raw;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return `${context.label}: $${value.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        if (currentChartType === 'bar') {
+            chartConfig.options.scales = {
+                x: {
+                    min: 0,
+                    beginAtZero: true,
+                    grid: {
+                        color: '#E5E7EB',
+                        drawBorder: false
+                    },
+                    position: 'bottom',
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0});
+                        },
+                        padding: 10
+                    }
+                },
+                y: {
+                    grid: {
+                        display: false,
+                        drawBorder: false
+                    },
+                    ticks: {
+                        padding: 10
+                    }
+                }
+            };
+            chartConfig.options.plugins.legend.display = false;
+        } else {
+            chartConfig.options.cutout = '60%';
+        }
+
+        revenueChart = new Chart(ctx, chartConfig);
+    };
+
+//websocket coding..
+
+
+
+</script>
+
+
+<script>
+    // Function to update dashboard data with websocket response
+    function updateDashboardData(data) {
+        console.log('Updating dashboard with data:', data);
+
+        // Update total revenue
+        const revenueElement = document.getElementById('total-revenue');
+        if (revenueElement) {
+            revenueElement.innerHTML = `
+                $${data.total_revenue.toFixed(2)}
+                ${data.revenue_change !== null ? `
+                    <div id="revenue-change" class="text-sm font-medium ${data.revenue_change > 0 ? 'text-green-300' : 'text-red-300'} text-right">
+                        ${data.revenue_change > 0 ? '↑' : '↓'} ${Math.abs(data.revenue_change)}%
+                    </div>
+                    <div class="text-xs text-white/60 text-right">vs last month</div>
+                ` : ''}
+            `;
+        }
+
+        // Update total sales
+        const salesElement = document.getElementById('total-sales');
+        if (salesElement) {
+            salesElement.innerHTML = `
+                ${data.total_sales}
+                ${data.sales_change !== null ? `
+                    <div id="sales-change" class="text-sm font-medium ${data.sales_change > 0 ? 'text-green-300' : 'text-red-300'} text-right">
+                        ${data.sales_change > 0 ? '↑' : '↓'} ${Math.abs(data.sales_change)}%
+                    </div>
+                    <div class="text-xs text-white/60 text-right">vs last month</div>
+                ` : ''}
+            `;
+        }
+
+        // Update top product
+        const topProductNameElement = document.getElementById('top-product-name');
+        const topProductQuantityElement = document.getElementById('top-product-quantity');
+        if (data.top_product) {
+            if (topProductNameElement) {
+                topProductNameElement.textContent = data.top_product.name;
+            }
+            if (topProductQuantityElement) {
+                topProductQuantityElement.textContent = `${data.top_product.total_quantity} units sold`;
+            }
+        }
+
+        // Update low stock count
+        const lowStockElement = document.getElementById('low-stock-count');
+        if (lowStockElement) {
+            lowStockElement.textContent = data.low_stock_count;
+        }
+
+        // Update tables
+        updateTopProductsTable(data.top_products);
+        updateLowStockTable(data.low_stock_products);
+    }
+
+    function updateTopProductsTable(products) {
+        const tableBody = document.querySelector('#top-products-table tbody');
+        if (tableBody && Array.isArray(products)) {
+            tableBody.innerHTML = products.map(product => `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        ${product.name}
+                    </td>
+                    <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${product.total_quantity}
+                    </td>
+                    <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        $${product.revenue.toFixed(2)}
+                    </td>
+                    <td class="px-4 sm:px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                            ${product.stock_level <= 5 ? 'bg-red-100 text-red-800' :
+                            product.stock_level <= 10 ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-green-100 text-green-800'}">
+                            ${product.stock_level}
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+    }
+
+    function updateLowStockTable(products) {
+        const tableBody = document.querySelector('#low-stock-table tbody');
+        if (tableBody && Array.isArray(products)) {
+            tableBody.innerHTML = products.map(product => `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        ${product.name}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${product.stock_level}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                            ${product.stock_level <= 5 ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}">
+                            ${product.stock_level <= 5 ? 'Critical' : 'Low'}
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+    }
+
+// Set up WebSocket connection with debug logging
+const ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
+const ws_path = `${ws_scheme}://${window.location.host}/ws/dashboard/`;
+console.log('Attempting to connect to WebSocket at:', ws_path);
+
+const socket = new WebSocket(ws_path);
+
+socket.onopen = function(event) {
+    console.log('WebSocket connection established');
+    // Send initial "hi" message
+    try {
+        socket.send(JSON.stringify({ message: 'hi' }));
+        console.log('Sent initial "hi" message');
+    } catch (error) {
+        console.error('Error sending initial message:', error);
+    }
+};
+
+socket.onmessage = function(event) {
+    console.log('Received WebSocket message:', event.data);
+    try {
+        const data = JSON.parse(event.data);
+        console.log('Parsed data:', data);
+        
+        // Debug check before updating
+       // debugElements();
+        
+        updateDashboardData(data);
+    } catch (error) {
+        console.error('Error processing WebSocket message:', error);
+        console.error('Stack trace:', error.stack);
+    }
+};
+
+socket.onerror = function(error) {
+    console.error('WebSocket error:', error);
+    console.log('WebSocket error details:', {
+        readyState: socket.readyState,
+        bufferedAmount: socket.bufferedAmount,
+        protocol: socket.protocol,
+        url: socket.url
+    });
+};
+
+socket.onclose = function(event) {
+    console.log('WebSocket connection closed:', {
+        code: event.code,
+        reason: event.reason,
+        wasClean: event.wasClean
+    });
+    // Implement reconnection logic here if needed
+};
+
+// Add debug logging to check if elements are found
+function debugElements() {
+    const elements = {
+        'total-revenue': document.getElementById('total-revenue'),
+        'total-sales': document.getElementById('total-sales'),
+        'top-product-name': document.getElementById('top-product-name'),
+        'top-product-quantity': document.getElementById('top-product-quantity'),
+        'low-stock-count': document.getElementById('low-stock-count'),
+        'top-products-table': document.getElementById('top-products-table'),
+        'low-stock-table': document.getElementById('low-stock-table')
+    };
+
+    console.log('Checking elements:', elements);
+    Object.entries(elements).forEach(([id, element]) => {
+        if (!element) {
+            console.error(`Element with id '${id}' not found!`);
+        }
+    });
+}
+
+// Call debug function when DOM is loaded
+document.addEventListener('DOMContentLoaded', debugElements);
+
+</script>
+{% endblock %} 
